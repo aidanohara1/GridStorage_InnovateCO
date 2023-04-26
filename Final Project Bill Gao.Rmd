@@ -1,0 +1,46 @@
+---
+title: "Final Project Bill Gao"
+author: "JingjianGao"
+date: "2023-04-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Main Question: How can Colorado address the challenge of balancing energy demands for its growing population and economy with the need for conservation and sustainability?
+
+# Advances in technology and falling prices mean grid-scale battery facilities that can store increasingly large amounts of energy are enjoying record growth.
+
+# The world’s largest battery energy storage system so far is the Moss Landing Energy Storage Facility in California, US, where the first 300-megawatt lithium-ion battery – comprising 4,500 stacked battery racks – became operational in January 2021.
+
+
+## Initial Dataset import
+
+```{r}
+
+
+
+
+```
+
+## EDA
+
+```{r}
+
+
+
+
+
+```
+
+## Possible Models
+```{r}
+# Simple Linear Models
+
+
+
+
+
+```
