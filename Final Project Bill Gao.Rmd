@@ -19,19 +19,55 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Initial Dataset import
 
 ```{r}
+library(readxl)
+library(dplyr)
 
+battery_2020 <-read.csv("battery_2020.csv")
 
-
+battery_2020_CO <- subset(battery_2020, State=="CO")
 
 ```
 
 ## EDA
 
 ```{r}
+library(ggplot2)
+
+#2016
+write.csv(X3_4_Energy_Storage_Y2016, file="battery_2016.csv",row.names=FALSE)
+
+battery_2016 <- read.csv("battery_2016.csv")
+
+state_capacity2 <- battery_2016 %>%
+  group_by(State) %>%
+  summarize(Nameplate.Energy.Capacity..MWh. = sum(Nameplate.Energy.Capacity..MWh.))
+
+# Plot the state capacity using ggplot2
+ggplot(state_capacity2, aes(x = reorder(State,-Nameplate.Energy.Capacity..MWh.), y = Nameplate.Energy.Capacity..MWh.)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = Nameplate.Energy.Capacity..MWh.), vjust = -0.5, size=2.5)+
+  xlab("State") +
+  ylab("Energy Capacity") +
+  ggtitle("Total Energy Capacity by State in 2016")
 
 
+# 2020
 
+ggplot(data=battery_2020,aes(x=State,y=battery_2020$Nameplate.Energy.Capacity..MWh.,color=State))+
+  geom_point()
 
+# Sum up the capacity readings for each state using group_by and summarize
+state_capacity <- battery_2020 %>%
+  group_by(State) %>%
+  summarize(Nameplate.Energy.Capacity..MWh. = sum(Nameplate.Energy.Capacity..MWh.))
+
+# Plot the state capacity using ggplot2
+ggplot(state_capacity, aes(x = reorder(State,-Nameplate.Energy.Capacity..MWh.), y = Nameplate.Energy.Capacity..MWh.)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = Nameplate.Energy.Capacity..MWh.), vjust = -0.5, size=2.5)+
+  xlab("State") +
+  ylab("Energy Capacity") +
+  ggtitle("Total Energy Capacity by State in 2020")
 
 ```
 
@@ -39,6 +75,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Simple Linear Models
 
+model1 <- lm(battery_2020$Nameplate.Energy.Capacity..MWh. ~ Technology+battery_2020$Nameplate.Reactive.Power.Rating+Operating.Month, data= battery_2020)
+
+summary(model1)
 
 
 
