@@ -59,18 +59,75 @@ CAEnergy <- CA_Energy_Cosumption %>%
          logWind = log(wind))
 
 
-addPop <- nst_est2020 %>%
+coPop <- nst_est2020 %>%
   filter(state == "Colorado") %>%
   pivot_longer(cols = -state, names_to = "Year") %>%
   mutate(Year = as.double(Year)) %>%
   left_join(COEnergy, by = "Year") %>%
-  select(-state) %>%
   rename(population = value)
 
+
+caPop <- nst_est2020 %>%
+  filter(state == "California") %>%
+  pivot_longer(cols = -state, names_to = "Year") %>%
+  mutate(Year = as.double(Year)) %>%
+  left_join(CAEnergy, by = "Year") %>%
+  rename(population = value)
 # View the merged dataset
-merged_data
+#merged_data
+
+colnames(coPop) = colnames(caPop)
+
+plotSet <- rbind(caPop,coPop)%>%
+  rename(renewable_total = renewable_otal) %>%
+  select(state,
+         Year,
+         population,
+         coal,
+         nat_gas,
+         petroleum_total,
+         ff_total,
+         nuclear_electric_power,
+         hydro_power,
+         wood_and_waste,
+         geo_thermal,
+         solar,
+         wind,
+         renewable_total,
+         total)
+
+ggplot(plotSet, aes(x = Year, color = state, col = variable)) +
+  # geom_line(aes(y = coal, color = "coal"), linewidth = 1) +
+  # geom_smooth(aes(y = coal, color = "coal"), method = "lm", se = TRUE, linetype = "dashed") +
+  # geom_line(aes(y = wind, color = "wind"), linewidth = 1) +
+  # geom_smooth(aes(y = wind, color = "wind"), method = "lm", se = TRUE, linetype = "dashed") +
+  # geom_line(aes(y = solar, color = "solar"), linewidth = 1) +
+  # geom_smooth(aes(y = solar, color = "solar"), method = "lm", se = TRUE, linetype = "dashed") +
+  geom_line() +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  labs(title = "Consumption vs. Year by State",
+       x = "Year",
+       y = "Coal",
+       color = "State") +
+  # scale_color_manual(values = c("coal" = "red", 
+  #                               "wind" = "blue", 
+  #                               "solar" = "green")) +
+  theme_bw()
 
 
+melter <- melt(plotSet, id = c('Year','state'))
+
+p <- melter %>% 
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  geom_area( ) +
+  scale_fill_viridis_b() +
+  theme(legend.position="none") +
+  ggtitle("Popularity of American names in the previous 30 years") +
+  theme(legend.position="none")
+
+# Turn it interactive
+p <- ggplotly(p, tooltip="text")
+p
 
 ggplot(COEnergy, aes(x = Year)) +
   geom_line(aes(y = Coal, color = "Coal")) +
