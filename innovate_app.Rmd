@@ -1,0 +1,280 @@
+---
+title: "Innovate_App"
+author: "Aidan O'Hara"
+date: "2023-05-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE,echo=FALSE,results='hide'}
+library(tidyverse)
+library(reshape2)
+library(ggplot2)
+library(readxl)
+library(viridis)
+library(plotly)
+library(kableExtra)
+
+
+mytable <- read_csv("CA_vs_CO_Table.csv")
+CO_Energy_Cosumption <- read_csv("CO_Energy_Cosumption.csv")
+CA_Energy_Cosumption <- read_csv("CA_Energy_Consumption.csv")
+CA_Energy_Cosumption <- CA_Energy_Cosumption[,1:28]
+nst_est2020 <- read_excel("nst-est2020.xlsx", 
+                            skip = 3)
+
+nst_est2020 <- nst_est2020 %>% rename(state = `...1`,
+                                      `2020` = `April 1`) %>%
+  mutate(state = sub("^\\.", "", state)) %>%
+  select(-Census, -`Estimates Base`, -`July 1`)
+
+COEnergy <- CO_Energy_Cosumption %>% rename(nat_gas = `Natural Gas`,
+                                            renew_total = `Total...25`,
+                                            ff_total = `FF Total`,
+                                            biomass = `Total...21`,
+                                            total = `Total...28`) %>%
+  filter(Year>=2010) %>%
+  mutate(logCoal = log(Coal),
+         logNatGas = log(nat_gas),
+         logSolar = log(Solar),
+         logWind = log(Wind))
+
+CAEnergy <- CA_Energy_Cosumption %>% 
+  filter(Year>=2010) %>%
+  mutate(logCoal = log(coal),
+         logNatGas = log(nat_gas),
+         logSolar = log(solar),
+         logWind = log(wind))
+
+
+coPop <- nst_est2020 %>%
+  filter(state == "Colorado") %>%
+  pivot_longer(cols = -state, names_to = "Year") %>%
+  mutate(Year = as.double(Year)) %>%
+  left_join(COEnergy, by = "Year") %>%
+  rename(population = value)
+
+
+caPop <- nst_est2020 %>%
+  filter(state == "California") %>%
+  pivot_longer(cols = -state, names_to = "Year") %>%
+  mutate(Year = as.double(Year)) %>%
+  left_join(CAEnergy, by = "Year") %>%
+  rename(population = value)
+
+colnames(coPop) = colnames(caPop)
+
+
+plotSet <- rbind(caPop,coPop)%>%
+  rename(renewable_total = renewable_otal) %>%
+  select(state,
+         population,
+         Year,
+         coal,
+         nat_gas,
+         ff_total,
+         nuclear_electric_power,
+         hydro_power,
+         wood_and_waste,
+         geo_thermal,
+         solar,
+         wind,
+         renewable_total)
+
+plotSetLog <- plotSet %>%
+  mutate(coal = log(coal),
+         nat_gas = log(nat_gas),
+         nuclear_electric_power = log(nuclear_electric_power),
+         hydro_power = log(hydro_power),
+         wood_and_waste = log(wood_and_waste),
+         geo_thermal = log(geo_thermal),
+         solar = log(solar),
+         wind = log(wind),
+         ff_total = log(ff_total),
+         renewable_total = log(renewable_total))
+
+plotSetCap <- plotSet %>%
+  mutate(coal = coal/population,
+         nat_gas = nat_gas/population,
+         nuclear_electric_power = nuclear_electric_power/population,
+         hydro_power = hydro_power/population,
+         wood_and_waste = wood_and_waste/population,
+         geo_thermal = geo_thermal/population,
+         solar = solar/population,
+         wind = wind/population,
+         ff_total = ff_total/population,
+         renewable_total = renewable_total/population)
+
+
+sourceSet <- plotSet %>% select(-ff_total,
+                                -renewable_total,
+                                -population)
+
+totalSet <- plotSet %>% select(Year,
+                               state,
+                               ff_total,
+                               renewable_total,
+                               -population)
+
+sourceSetLog <- plotSetLog %>% select(-ff_total,
+                                -renewable_total,
+                                -population)
+
+totalSetLog <- plotSetLog %>% select(Year,
+                               state,
+                               ff_total,
+                               renewable_total,
+                               -population)
+
+sourceSetCap <- plotSetCap %>% select(-ff_total,
+                                -renewable_total,
+                                -population)
+
+totalSetCap <- plotSetCap %>% select(Year,
+                               state,
+                               ff_total,
+                               renewable_total,
+                               -population)
+
+sourceMelt <- melt(sourceSet, id = c('Year','state'))
+totalMelt <- melt(totalSet, id = c('Year','state'))
+
+sourceLogMelt <- melt(sourceSetLog, id = c('Year','state'))
+totalLogMelt <- melt(totalSetLog, id = c('Year','state'))
+
+sourceCapMelt <- melt(sourceSetCap, id = c('Year','state'))
+totalCapMelt <- melt(totalSetCap, id = c('Year','state'))
+
+ ratioTable <- mytable %>% select(Year,
+                                  CA_ratio,
+                                  CO_ratio,
+                                  CA_BA_cap,
+                                  CO_BA_cap) %>%
+   rename(`Ratio of FF to renewables, CA` = CA_ratio,
+          `Ratio of FF to renewable, CO` = CO_ratio,
+          `Nameplate Battery Capacity CA` = CA_BA_cap,
+          `Nameplate Battery Capacity CO` = CO_BA_cap)
+ 
+ totalsTable <- mytable %>% select(Year,
+                                   CA_ff_total,
+                                   CA_renew,
+                                   CO_ff_total,
+                                   CO_renew) %>%
+   rename(`CA Fossil Fuels`= CA_ff_total,
+          `CA Renewables` = CA_renew,
+          `CO Fossil Fuels` = CO_ff_total,
+          `CO Renewables` = CO_renew)
+
+```
+
+
+
+```{r, echo=FALSE}
+# Display the table using kable and kable_styling
+kable(totalsTable, caption = "Total Consumption in Trillions of BTUs") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+
+```
+
+```{r, echo=FALSE}
+# Display the table using kable and kable_styling
+kable(ratioTable, caption = "Ratio of Consumption and Battery Capacity") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+
+```
+
+Some plots.
+
+```{r , echo=FALSE}
+p <- sourceMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "trillions btu") +
+  ggtitle("consumption") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
+
+
+```{r , echo=FALSE}
+p <- totalMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "trillions btu") +
+  ggtitle("total consumption") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
+
+```{r , echo=FALSE}
+p <- sourceLogMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "log trillions btu") +
+  ggtitle("log consumption") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
+
+```{r , echo=FALSE}
+p <- totalLogMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "log trillions btu") +
+  ggtitle("total log consumption") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
+
+```{r , echo=FALSE}
+p <- sourceCapMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "trillions btu per capita") +
+  ggtitle("consumption per capita") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
+
+```{r , echo=FALSE}
+p <- totalCapMelt %>%
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  labs(y = "trillions btu per capita") +
+  ggtitle("total consumption per capita") 
+
+p <- ggplotly(p, tooltip="text")
+p
+
+```
