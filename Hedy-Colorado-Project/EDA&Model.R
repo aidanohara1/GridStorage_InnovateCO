@@ -1,9 +1,11 @@
+#Hedy
+
 # Load the tidyverse package
 library(tidyverse)
 
 
 # Read the CSV file
-data <- read_csv("~/Desktop/Colorado-Project/Colorado_State_Agency_Renewable_Energy_Use_FY15_-_FY21.csv")
+data <- read_csv("Colorado-Project/Colorado_State_Agency_Renewable_Energy_Use_FY15_-_FY21.csv")
 
 
 # View the first few rows of the data

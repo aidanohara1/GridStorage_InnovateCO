@@ -1,4 +1,4 @@
-
+# Aidan EDA/Development zone
 
 revByutility <- read.csv("Electricity_Revenue_by_Utility_in_Colorado.csv")
 View(revByutility)
@@ -82,10 +82,8 @@ plotSet <- rbind(caPop,coPop)%>%
   rename(renewable_total = renewable_otal) %>%
   select(state,
          Year,
-         population,
          coal,
          nat_gas,
-         petroleum_total,
          ff_total,
          nuclear_electric_power,
          hydro_power,
@@ -93,8 +91,15 @@ plotSet <- rbind(caPop,coPop)%>%
          geo_thermal,
          solar,
          wind,
-         renewable_total,
-         total)
+         renewable_total)
+
+sourceSet <- plotSet %>% select(-ff_total,
+                                -renewable_total)
+
+totalSet <- plotSet %>% select(Year,
+                               state,
+                               ff_total,
+                               renewable_total)
 
 ggplot(plotSet, aes(x = Year, color = state, col = variable)) +
   # geom_line(aes(y = coal, color = "coal"), linewidth = 1) +
@@ -115,16 +120,26 @@ ggplot(plotSet, aes(x = Year, color = state, col = variable)) +
   theme_bw()
 
 
-melter <- melt(plotSet, id = c('Year','state'))
+library(viridis)
+library(hrbrthemes)
+melter <- melt(sourceSet, id = c('Year','state'))
+melter2 <- melt(totalSet, id = c('Year','state'))
 
 p <- melter %>% 
   ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
   geom_area( ) +
-  scale_fill_viridis_b() +
   theme(legend.position="none") +
-  ggtitle("Popularity of American names in the previous 30 years") +
-  theme(legend.position="none")
+  ggtitle("consumption") 
 
+q <- melter2 %>% 
+  ggplot(aes(x=Year, y=value, fill=variable, text=variable)) +
+  facet_wrap(~state, ncol = 2, scales = "free_y") +
+  scale_fill_viridis(discrete = TRUE) +
+  geom_area( ) +
+  theme(legend.position="none") +
+  ggtitle("consumption") 
 # Turn it interactive
 p <- ggplotly(p, tooltip="text")
 p

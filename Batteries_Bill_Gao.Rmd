@@ -1,5 +1,5 @@
 ---
-title: "Final Project Bill Gao"
+title: "Batteries Bill Gao"
 author: "JingjianGao"
 date: "2023-04-26"
 output: html_document
